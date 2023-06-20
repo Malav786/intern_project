@@ -2,10 +2,9 @@ from pydantic import BaseModel, EmailStr, validator
 
 
 class userBase(BaseModel):
-    user_id: int
-    user_name: str
-    user_email: EmailStr
-    user_password: str
+    name: str
+    email: EmailStr
+    password: str
 
 
 
@@ -20,19 +19,16 @@ class user(userAdd):
 
 
 class userProduct(BaseModel):
-    user_id: int
-    user_name : str
-    user_email: EmailStr
-    user_password: str
+    name : str
+    email: EmailStr
+    password: str
 
     class Config:
         orm_mode = True
 
 class updateUser(BaseModel):
-    user_id: int
-    user_name: str
-    user_email: EmailStr
-    user_password: str
+    name: str
+    email: EmailStr
 
     class Config:
         orm_mode = True

@@ -1,7 +1,13 @@
 from app.db.connection import Base
-from sqlalchemy import Column, INTEGER, TEXT
+from sqlalchemy import Column, INTEGER, TEXT, TIMESTAMP, func, VARCHAR
+import shortuuid
+
 
 class images(Base):
     __tablename__='images'
-    image_id=Column(INTEGER, primary_key=True)
-    image_filename=Column(TEXT)
+    id=Column(INTEGER, primary_key=True)
+    unique_id=Column(VARCHAR(25), default=shortuuid.uuid)
+    filename=Column(TEXT)
+    create_time=Column(TIMESTAMP, default=func.current_timestamp())
+    updated_date = Column(TIMESTAMP, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    created_by = Column(VARCHAR(20))

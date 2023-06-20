@@ -1,24 +1,25 @@
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, status, Body, Depends, Header
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+#from fastapi.responses import FileResponse
 import os
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from app.schemas import schema_img
 from app.db import engine
-import uuid
 from app.db.connection import get_db, Base
 from app.models import users, Base, images
 from typing import List
+from app.login_system import login
 from sqlalchemy.orm import Session
 from app.crud import crud_fn, crud_fn_imgs
 from app.schemas import schema
-from random import randint
-
-from tkinter import Tk
-from tkinter.filedialog import askopenfilenames
+from app.mediapipe import image_classify
+from subprocess import Popen
 
 Base.metadata.create_all(bind=engine)
-IMAGEDIR = "images/"
+IMAGEDIR = "/images"
+security = HTTPBasic() 
 
 app = FastAPI()
 
@@ -30,17 +31,17 @@ def retrieve_all_user_details(skip: int = 0, limit: int = 100, db: Session = Dep
 
 @app.post('/user', response_model=schema.userAdd)
 def add_new_user(user: schema.userAdd, db: Session = Depends(get_db)):
-    return crud_fn.add_user_details_to_db(db=db, user=user)
+    return crud_fn.add_details_to_db(db=db, user=user)
 
 
 @app.delete('/user')
 def delete_user_by_id(id: int, db: Session = Depends(get_db)):
-    details = crud_fn.get_user_by_id(db=db, id=id)
+    details = crud_fn.get_by_id(db=db, id=id)
     if not details:
         raise HTTPException(status_code=404, detail=f"No record found to delete")
 
     try:
-        crud_fn.delete_user_details_by_id(db=db, id=id)
+        crud_fn.delete_details_by_id(db=db, id=id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Unable to delete: {e}")
     return {"delete status": "success"}
@@ -48,15 +49,27 @@ def delete_user_by_id(id: int, db: Session = Depends(get_db)):
 
 @app.put('/user', response_model=schema.user)
 def update_user_details(user_id: int, update_param: schema.updateUser, db: Session = Depends(get_db)):
-    details = crud_fn.get_user_by_id(db=db, id=user_id)
+    details = crud_fn.get_by_id(db=db, id=user_id)
     if not details:
         raise HTTPException(status_code=404, detail=f"No record found to update")
-    return crud_fn.update_user_details(db=db, details=update_param, id=id)
+    
+    updated_details = crud_fn.update_details(db=db, details=update_param, id=user_id)
+    return updated_details
+
+
+
 
 
 @app.post("/upload/")
-def create_upload_file(image: UploadFile = File(...), db: Session = Depends(get_db)):    
-    return crud_fn_imgs.add_img_details_to_db(db=db, image=image)
+async def create_upload_file(created_by: str, image: UploadFile = File(...), db: Session = Depends(get_db)):
+    name = image.filename
+    images.created_by = created_by
+    filename = os.path.join("E:/photobooth_Management/app/images", name)  
+    #image.filename = f"{uuid.uuid4()}.jpg"
+    contents = await image.read()
+    with open(f"{filename}", "wb") as f:
+        f.write(contents)   
+    return crud_fn_imgs.add_img_details_to_db(db=db, image=filename, created_by=created_by)
  
  
 @app.get("/show/id")
@@ -80,3 +93,17 @@ def delete_img_by_id(id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Unable to delete: {e}")
     return {"delete status": "success"}
+
+def run_streamlit():
+    st_process=Popen(["Streamlit", "run", "E:/photobooth_Management/app/app/mediapipe/classification.py"])
+
+@app.get('/classify')
+def classify_img(bg_task: BackgroundTasks):
+    bg_task.add_task(run_streamlit)
+    return "Done"
+
+
+@app.get('/login')
+def user_login(credentials: HTTPBasicCredentials = Depends(security), db: Session = Depends(get_db),):
+    user = login.login_user.loginuser(db, credentials.username, credentials.password)
+    return {"message": "Logged in successfully"}

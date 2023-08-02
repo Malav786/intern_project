@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Image Carousel and Upload</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      overflow: hidden;
+      border-radius: 5px;
+    }
+
+    .carousel-image {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .carousel-image:not(.active) {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .upload-form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .upload-form label {
+      font-weight: bold;
+    }
+
+    .upload-form input[type="file"] {
+      margin-top: 10px;
+    }
+
+    .upload-form button[type="submit"] {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Image Carousel and Upload</h2>
+    <div id="imageCarousel" class="carousel slide" data-ride="carousel">
+      <!-- Carousel indicators -->
+      <l class="carousel-indicators"></l>
+  
+      <!-- Carousel items -->
+      <div class="carousel-inner"></div>
+  
+      <!-- Carousel controls -->
+      <a class="carousel-control-prev" href="#imageCarousel" role="button" data-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="sr-only">Previous</span>
+      </a>
+      <a class="carousel-control-next" href="#imageCarousel" role="button" data-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="sr-only">Next</span>
+      </a>
+    </div>
+  
+    <script>
+      // Fetch image URLs from the server using AJAX
+      fetchImages();
+  
+      function fetchImages() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '/show', true);
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            const imageUrls = JSON.parse(xhr.responseText);
+            displayImages(imageUrls);
+          } else {
+            console.log('Error:', xhr.status);
+          }
+        };
+        xhr.send();
+      }
+  
+      function displayImages(imageUrls) {
+        const carouselInner = document.querySelector('.carousel-inner');
+        const carouselIndicators = document.querySelector('.carousel-indicators');
+  
+        imageUrls.forEach((imageUrl, index) => {
+          // Create carousel item
+          const carouselItem = document.createElement('div');
+          carouselItem.classList.add('carousel-item');
+          if (index === 0) {
+            carouselItem.classList.add('active');
+          }
+  
+          // Create image element
+          const img = document.createElement('img');
+          img.src = imageUrl;
+          img.alt = 'Image';
+          carouselItem.appendChild(img);
+  
+          // Create carousel indicator
+          const carouselIndicator = document.createElement('li');
+          carouselIndicator.setAttribute('data-target', '#imageCarousel');
+          carouselIndicator.setAttribute('data-slide-to', index.toString());
+          if (index === 0) {
+            carouselIndicator.classList.add('active');
+          }
+  
+          carouselInner.appendChild(carouselItem);
+          carouselIndicators.appendChild(carouselIndicator);
+        });
+      }
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Include necessary JavaScript files for the carousel library -->
+  
+
+    <form class="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+      <label for="image">Select an image to upload:</label>
+      <input type="file" id="image" name="image" accept="image/*" required>
+      <button type="submit">Upload</button>    
+      <a href="/classify" class="btn btn-link">classify yourself</a>
+    </form>
+    <div id="success-message" style="display: none; margin-bottom: 10px;">
+      {{ success_message }}
+    </div>
+    <script>
+        document.getElementById("success-message").style.display = "block";
+        setTimeout(function() {
+            document.getElementById("success-message").style.display = "none";
+        }, 5000);
+    </script>
+  </div>
+
+  <script>
+    // JavaScript code for image carousel goes here
+  </script>
+</body>
+
+</html>
